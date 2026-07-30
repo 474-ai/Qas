@@ -2,27 +2,20 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>قاس - قياس الواقع المعزز</title>
-    
-    <!-- استدعاء المكتبات الرسمية لتشغيل كاميرا الواقع المعزز على المتصفح -->
-    <script src="https://aframe.io"></script>
-    
     <style>
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow: hidden; background-color: #000;
         }
-        /* صفحة الترحيب بلون شعارك الأزرق المميز */
         #welcome-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #0044ff; color: white; display: flex; flex-direction: column;
             align-items: center; justify-content: center; z-index: 9999;
             text-align: center; padding: 20px; box-sizing: border-box;
         }
-        
-        /* رسم الشعار الخاص بك برمجياً بدقة عالية */
         .logo-container {
             width: 120px; height: 120px; background: white; 
             border-radius: 25px; display: flex; align-items: center; 
@@ -30,22 +23,16 @@
             box-shadow: 0 8px 24px rgba(0,0,0,0.2);
         }
         .logo-svg { width: 80px; height: 80px; }
-
-        #welcome-screen h1 { font-size: 2.2rem; margin: 10px 0; font-weight: bold; }
-        #welcome-screen p { font-size: 1.1rem; max-width: 320px; line-height: 1.6; opacity: 0.9; margin-bottom: 20px; }
-        
+        h1 { font-size: 2.2rem; margin: 10px 0; font-weight: bold; }
+        p { font-size: 1.1rem; max-width: 320px; line-height: 1.6; opacity: 0.9; margin-bottom: 20px; }
         .steps { text-align: right; background: rgba(255,255,255,0.15); padding: 15px 25px; border-radius: 15px; margin-bottom: 30px; font-size: 0.95rem; }
         .steps div { margin: 8px 0; }
-        
         .start-btn {
             background-color: #ffffff; color: #0044ff; border: none;
             padding: 16px 50px; font-size: 1.2rem; font-weight: bold;
             border-radius: 50px; cursor: pointer; transition: 0.2s;
             box-shadow: 0 6px 20px rgba(0,0,0,0.15);
         }
-        .start-btn:hover { transform: scale(1.03); }
-
-        /* واجهة أزرار القياس الحقيقية (تظهر فوق الكاميرا) */
         #ar-ui {
             display: none; position: fixed; top: 0; left: 0;
             width: 100%; height: 100%; z-index: 99; pointer-events: none;
@@ -55,7 +42,7 @@
             background: rgba(0, 0, 0, 0.75); color: #fff; text-align: center;
             padding: 12px 30px; border-radius: 30px; font-size: 1.4rem;
             font-weight: bold; border: 2px solid #0044ff; pointer-events: auto;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3); min-width: 150px;
+            min-width: 150px;
         }
         .action-btn {
             position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%);
@@ -63,20 +50,23 @@
             border-radius: 50%; font-weight: bold; font-size: 1.1rem; cursor: pointer;
             box-shadow: 0 0 25px rgba(0,0,0,0.4); border: 6px solid #0044ff; pointer-events: auto;
         }
-        .action-btn:active { transform: translateX(-50%) scale(0.95); }
-        
         .reset-btn {
             position: absolute; bottom: 70px; right: 35px;
             background: rgba(255, 59, 48, 0.9); color: white; border: none;
             padding: 10px 22px; border-radius: 20px; font-weight: bold; cursor: pointer; pointer-events: auto;
         }
-        
-        .a-canvas { z-index: 1 !important; }
+        video {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: cover; z-index: 1;
+        }
+        canvas {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 2; pointer-events: none;
+        }
     </style>
 </head>
 <body>
 
-    <!-- 1. صفحة الترحيب مع تطبيق شعارك المبتكر -->
     <div id="welcome-screen">
         <div class="logo-container">
             <svg class="logo-svg" viewBox="0 0 100 100" fill="none" xmlns="http://w3.org">
@@ -88,7 +78,6 @@
         </div>
         <h1>موقع قَاسْ</h1>
         <p>أداة ذكية لقياس النوافذ والجدران عبر الخطوط الافتراضية بكاميرا جوالك مباشرة.</p>
-        
         <div class="steps">
             <div>• وجّه الكاميرا نحو الجدار أو النافذة بثبات.</div>
             <div>• اضغط <b>"نقطة"</b> لتحديد بداية القياس.</div>
@@ -97,18 +86,14 @@
         <button class="start-btn" id="start-ar-btn">ابدأ القياس</button>
     </div>
 
-    <!-- 2. واجهة القياس النشطة فوق الكاميرا -->
     <div id="ar-ui">
         <div class="counter-box" id="result-text">0.00 متر</div>
         <button class="action-btn" id="action-btn">نقطة</button>
         <button class="reset-btn" id="reset-btn">إعادة</button>
     </div>
 
-    <!-- 3. محرك الواقع المعزز لتشغيل الكاميرا -->
-    <a-scene embedded vr-mode-ui="enabled: false">
-        
-        <a-camera id="camera" look-controls="enabled: true" wasd-controls="enabled: false"></a-camera>
-    </a-scene>
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas"></canvas>
 
     <script src="app.js"></script>
 </body>
