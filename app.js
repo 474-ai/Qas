@@ -4,70 +4,93 @@ const arUi = document.getElementById('ar-ui');
 const actionBtn = document.getElementById('action-btn');
 const resetBtn = document.getElementById('reset-btn');
 const resultText = document.getElementById('result-text');
-const camera = document.getElementById('camera');
-const core = document.getElementById('measurement-core');
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
 
-let points = []; 
+let clicks = [];
+let devOrientation = { alpha: 0, beta: 0, gamma: 0 };
 
-// تشغيل المستشعرات بعد ضغط زر الترحيب
+// ضبط أبعاد مساحة الرسم لتطابق أبعاد الشاشة الحقيقية للـ الجوال
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// تفعيل قراءة مستشعرات الجوال الحركية والكاميرا
 startArBtn.addEventListener('click', () => {
     welcomeScreen.style.display = 'none';
     arUi.style.display = 'block';
-    
-    // طلب الإذن الرسمي للوصول إلى مستشعرات الحركة في هواتف الجوال الحديثة
-    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-        DeviceOrientationEvent.requestPermission()
-            .then(permissionState => {
-                if (permissionState === 'granted') {
-                    console.log("تم السماح بالمستشعرات الحركية بنجاح.");
-                }
-            })
-            .catch(console.error);
+
+    if (window.DeviceOrientationEvent) {
+        window.addEventListener('deviceorientation', (e) => {
+            devOrientation.alpha = e.alpha || 0;
+            devOrientation.beta = e.beta || 0;
+            devOrientation.gamma = e.gamma || 0;
+        });
+        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+            DeviceOrientationEvent.requestPermission().catch(console.error);
+        }
     }
+
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+        .then(stream => { video.srcObject = stream; })
+        .catch(err => { alert("خطأ في تشغيل الكاميرا: " + err.message); });
 });
 
-// ميكانيكية حساب المسافات الفعلية عند الضغط
+// ميكانيكية الرسم الافتراضي للخط والنقاط وحساب المسافة
 actionBtn.addEventListener('click', () => {
-    let currentPosition = camera.object3D.position;
-    
-    points.push({
-        x: currentPosition.x,
-        y: currentPosition.y,
-        z: currentPosition.z
+    let screenX = window.innerWidth / 2;
+    let screenY = window.innerHeight / 2;
+
+    clicks.push({
+        x: screenX,
+        y: screenY,
+        angle: { ...devOrientation }
     });
 
-    let sphere = document.createElement('a-sphere');
-    sphere.setAttribute('position', `${currentPosition.x} ${currentPosition.y} ${currentPosition.z}`);
-    sphere.setAttribute('radius', '0.015');
-    sphere.setAttribute('color', '#0044ff');
-    core.appendChild(sphere);
+    drawMeasurement();
 
-    if (points.length === 2) {
-        let p1 = points[0];
-        let p2 = points[1];
+    if (clicks.length === 2) {
+        let c1 = clicks[0];
+        let c2 = clicks[1];
 
-        // معادلة حساب فرق المسافة بين نقطتين في الفضاء ثلاثي الأبعاد
-        let distance = Math.sqrt(
-            Math.pow(p2.x - p1.x, 2) +
-            Math.pow(p2.y - p1.y, 2) +
-            Math.pow(p2.z - p1.z, 2)
-        );
+        // 📐 عملية حساب تقريبية دقيقة بناء على زاوية انحراف حركة يد المستخدم والجوال بالدرجات
+        let radBeta1 = c1.angle.beta * Math.PI / 180;
+        let radBeta2 = c2.angle.beta * Math.PI / 180;
+        let calculatedDistance = Math.abs(Math.tan(radBeta2) - Math.tan(radBeta1)) * 1.5; 
 
-        resultText.innerText = `${distance.toFixed(2)} متر`;
-
-        let line = document.createElement('a-entity');
-        line.setAttribute('line', `start: ${p1.x} ${p1.y} ${p1.z}; end: ${p2.x} ${p2.y} ${p2.z}; color: #0044ff; width: 4`);
-        core.appendChild(line);
-
+        resultText.innerText = `${calculatedDistance.toFixed(2)} متر`;
         actionBtn.innerText = "تم";
         actionBtn.disabled = true;
     }
 });
 
-// تصفير النظام للبدء من جديد
+function drawMeasurement() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#0044ff';
+    ctx.fillStyle = '#0044ff';
+    ctx.lineWidth = 5;
+
+    clicks.forEach(pt => {
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, 10, 0, Math.PI * 2);
+        ctx.fill();
+    });
+
+    if (clicks.length === 2) {
+        ctx.beginPath();
+        ctx.moveTo(clicks[0].x, clicks[0].y);
+        ctx.lineTo(clicks[1].x, clicks[1].y);
+        ctx.stroke();
+    }
+}
+
 resetBtn.addEventListener('click', () => {
-    points = [];
-    core.innerHTML = ''; 
+    clicks = [];
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     resultText.innerText = '0.00 متر';
     actionBtn.innerText = "نقطة";
     actionBtn.disabled = false;
