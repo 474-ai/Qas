@@ -14,15 +14,21 @@ startArBtn.addEventListener('click', () => {
     welcomeScreen.style.display = 'none';
     arUi.style.display = 'block';
     
-    // طلب الإذن الرسمي للكاميرا والمستشعرات الحركية للجوال
-    if (DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
-        DeviceOrientationEvent.requestPermission();
+    // طلب الإذن الرسمي للوصول إلى مستشعرات الحركة في هواتف الآيفون والأندرويد الحديثة
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission()
+            .then(permissionState => {
+                if (permissionState === 'granted') {
+                    console.log("تم السماح بالمستشعرات الحركية بنجاح.");
+                }
+            })
+            .catch(console.error);
     }
 });
 
 // ميكانيكية حساب المسافات الفعلية عند الضغط
 actionBtn.addEventListener('click', () => {
-    // التقاط موقع الجوال الحالي في الغرفة عبر مستشعر look-controls
+    // التقاط موقع الجوال الحالي في الغرفة ثلاثية الأبعاد
     let currentPosition = camera.object3D.position;
     
     points.push({
