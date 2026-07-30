@@ -7,7 +7,6 @@
     
     <!-- استدعاء المكتبات الرسمية لتشغيل كاميرا الواقع المعزز على المتصفح -->
     <script src="https://aframe.io"></script>
-    <script src="https://githack.com"></script>
     
     <style>
         body, html {
@@ -72,7 +71,6 @@
             padding: 10px 22px; border-radius: 20px; font-weight: bold; cursor: pointer; pointer-events: auto;
         }
         
-        /* إخفاء واجهات الأخطاء الافتراضية للمكتبة لجعل الموقع نظيفاً */
         .a-canvas { z-index: 1 !important; }
     </style>
 </head>
@@ -106,11 +104,8 @@
         <button class="reset-btn" id="reset-btn">إعادة</button>
     </div>
 
-    <!-- 3. محرك الواقع المعزز المحدث لإجبار تفعيل الكاميرا الخلفية تلقائياً -->
-    <a-scene embedded arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false;" vr-mode-ui="enabled: false">
-        
-        <!-- الكيان البرمجي الذي سيتم رسم الخطوط والنقاط الافتراضية بداخله -->
-        
+    <!-- 3. محرك الواقع المعزز لتشغيل الكاميرا -->
+    <a-scene embedded vr-mode-ui="enabled: false">
         
         <a-camera id="camera" look-controls="enabled: true" wasd-controls="enabled: false"></a-camera>
     </a-scene>
